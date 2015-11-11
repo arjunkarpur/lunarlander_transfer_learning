@@ -5,6 +5,11 @@ import burlap.behavior.policy.Policy;
 import burlap.behavior.singleagent.EpisodeAnalysis;
 import burlap.behavior.singleagent.auxiliary.EpisodeSequenceVisualizer;
 import burlap.behavior.singleagent.auxiliary.StateGridder;
+import burlap.behavior.singleagent.auxiliary.performance.LearningAlgorithmExperimenter;
+import burlap.behavior.singleagent.auxiliary.performance.PerformanceMetric;
+import burlap.behavior.singleagent.auxiliary.performance.TrialMode;
+import burlap.behavior.singleagent.learning.LearningAgent;
+import burlap.behavior.singleagent.learning.LearningAgentFactory;
 import burlap.behavior.singleagent.learning.lspi.LSPI;
 import burlap.behavior.singleagent.learning.lspi.SARSCollector;
 import burlap.behavior.singleagent.learning.lspi.SARSData;
@@ -256,6 +261,27 @@ public class LLSarsa {
 
         SimulatedEnvironment env = new SimulatedEnvironment(domain, rf, tf, s);
 
+        LearningAgentFactory transferLearningFactory = new LearningAgentFactory() {
+            @Override
+            public String getAgentName() {
+                return "TRANSFER AGENT";
+            }
+
+            @Override
+            public LearningAgent generateAgent() {
+                return new GradientDescentSarsaLam(domain, 0.99, vfa, 0.02, 0.5);
+            }
+        };
+        LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(env, 30, 500, transferLearningFactory);
+        exp.setUpPlottingConfiguration(500, 250, 2, 1000, TrialMode.MOSTRECENTANDAVERAGE,
+                PerformanceMetric.CUMULATIVESTEPSPEREPISODE, PerformanceMetric.AVERAGEEPISODEREWARD);
+        exp.startExperiment();
+        exp.writeEpisodeDataToCSV("expDat");
+
+
+
+
+        /*
         List<EpisodeAnalysis> episodes = new ArrayList();
         for(int i = 0; i < 1000; i++){
             EpisodeAnalysis ea = agent.runLearningEpisode(env);
@@ -263,12 +289,13 @@ public class LLSarsa {
             System.out.println(i + ": " + ea.maxTimeStep());
             env.resetEnvironment();
         }
-
         Visualizer v = LLVisualizer.getVisualizer(lld.getPhysParams());
         new EpisodeSequenceVisualizer(v, domain, episodes);
-
+*/
 
     }
+
+
 
 
     public static void main(String[] args) {
