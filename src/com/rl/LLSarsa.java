@@ -159,6 +159,24 @@ public class LLSarsa {
         GradientDescentSarsaLam agent = new GradientDescentSarsaLam(domain, 0.99, vfa, 0.02, 0.5);
 
         SimulatedEnvironment env = new SimulatedEnvironment(domain, rf, tf, s);
+
+        LearningAgentFactory transferLearningFactory = new LearningAgentFactory() {
+            @Override
+            public String getAgentName() {
+                return "SOURCE AGENT";
+            }
+
+            @Override
+            public LearningAgent generateAgent() {
+                return agent;
+            }
+        };
+        LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(env, 1, 2000, transferLearningFactory);
+        exp.setUpPlottingConfiguration(500, 500, 2, 1000, TrialMode.MOSTRECENTTTRIALONLY, PerformanceMetric.STEPSPEREPISODE);
+        exp.startExperiment();
+        exp.writeEpisodeDataToCSV("expDataSrc");
+
+        /*
         List<EpisodeAnalysis> episodes = new ArrayList();
         for(int i = 0; i < 5000; i++){
             EpisodeAnalysis ea = agent.runLearningEpisode(env);
@@ -169,18 +187,7 @@ public class LLSarsa {
 
         Visualizer v = LLVisualizer.getVisualizer(lld.getPhysParams());
         new EpisodeSequenceVisualizer(v, domain, episodes);
-
-
-        if (taskID == 2) {
-            s = LunarLanderDomain.getCleanState(domain, 1);
-            LunarLanderDomain.setAgent(s, 0., 5., 30.);
-            LunarLanderDomain.setObstacle(s, 0, 30., 50, 20, 40);
-            LunarLanderDomain.setPad(s, 50, 100., 0., 1.);
-
-            System.out.println("initial state approximation: " + vfa.getStateValue(s).predictedValue);
-        }
-
-
+*/
         return agent;
     }
 
@@ -269,14 +276,13 @@ public class LLSarsa {
 
             @Override
             public LearningAgent generateAgent() {
-                return new GradientDescentSarsaLam(domain, 0.99, vfa, 0.02, 0.5);
+                return agent;
             }
         };
-        LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(env, 30, 500, transferLearningFactory);
-        exp.setUpPlottingConfiguration(500, 250, 2, 1000, TrialMode.MOSTRECENTANDAVERAGE,
-                PerformanceMetric.CUMULATIVESTEPSPEREPISODE, PerformanceMetric.AVERAGEEPISODEREWARD);
+        LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(env, 1, 2000, transferLearningFactory);
+        exp.setUpPlottingConfiguration(500, 500, 2, 1000, TrialMode.MOSTRECENTTTRIALONLY, PerformanceMetric.STEPSPEREPISODE);
         exp.startExperiment();
-        exp.writeEpisodeDataToCSV("expDat");
+        exp.writeEpisodeDataToCSV("expDatTransfer");
 
 
 
