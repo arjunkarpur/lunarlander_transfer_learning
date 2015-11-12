@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="d6faee85-fc22-47e1-9b69-7a09c5e838e5" name="Default" comment="">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/expDatTransfer.csv" afterPath="$PROJECT_DIR$/expDatTransfer.csv" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/rl/LLSarsa.java" afterPath="$PROJECT_DIR$/src/com/rl/LLSarsa.java" />
     </list>
     <ignored path="testproject.iws" />
@@ -27,8 +28,8 @@
       <file leaf-file-name="LLSarsa.java" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/com/rl/LLSarsa.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.5588235">
-              <caret line="165" column="38" selection-start-line="165" selection-start-column="38" selection-end-line="165" selection-end-column="38" />
+            <state vertical-scroll-proportion="0.3627451">
+              <caret line="281" column="90" selection-start-line="281" selection-start-column="90" selection-end-line="281" selection-end-column="90" />
               <folding>
                 <element signature="imports" expanded="true" />
                 <element signature="e#7899#7900#0" expanded="true" />
@@ -595,8 +596,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/com/rl/LLSarsa.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.5588235">
-          <caret line="165" column="38" selection-start-line="165" selection-start-column="38" selection-end-line="165" selection-end-column="38" />
+        <state vertical-scroll-proportion="0.3627451">
+          <caret line="281" column="90" selection-start-line="281" selection-start-column="90" selection-end-line="281" selection-end-column="90" />
           <folding>
             <element signature="imports" expanded="true" />
             <element signature="e#7899#7900#0" expanded="true" />

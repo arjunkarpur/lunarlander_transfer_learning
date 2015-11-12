@@ -171,7 +171,7 @@ public class LLSarsa {
                 return agent;
             }
         };
-        LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(env, 1, 2000, transferLearningFactory);
+        LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(env, 1, 1000, transferLearningFactory);
         exp.setUpPlottingConfiguration(500, 500, 2, 1000, TrialMode.MOSTRECENTTTRIALONLY, PerformanceMetric.STEPSPEREPISODE);
         exp.startExperiment();
         exp.writeEpisodeDataToCSV("expDataSrc");
@@ -279,7 +279,7 @@ public class LLSarsa {
                 return agent;
             }
         };
-        LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(env, 1, 2000, transferLearningFactory);
+        LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(env, 1, 1000, transferLearningFactory);
         exp.setUpPlottingConfiguration(500, 500, 2, 1000, TrialMode.MOSTRECENTTTRIALONLY, PerformanceMetric.STEPSPEREPISODE);
         exp.startExperiment();
         exp.writeEpisodeDataToCSV("expDatTransfer");
