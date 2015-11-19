@@ -70,40 +70,7 @@ class LLRectangle {
 public class LLSarsa {
 
     public static LearningAgentFactory getAgentFactory(String agentName, SimulatedEnvironment env) {
-        Domain domain = env.getDomain();
-        LunarLanderDomain lld = new LunarLanderDomain();
-        //---------- Set up linear approximation method --------------
-        int nTilings = 5;
-        CMACFeatureDatabase cmac = new CMACFeatureDatabase(nTilings,
-                CMACFeatureDatabase.TilingArrangement.RANDOMJITTER);
-        double resolution = 10.;
 
-        double angleWidth = 2 * lld.getAngmax() / resolution;
-        double xWidth = (lld.getXmax() - lld.getXmin()) / resolution;
-        double yWidth = (lld.getYmax() - lld.getYmin()) / resolution;
-        double velocityWidth = 2 * lld.getVmax() / resolution;
-
-        cmac.addSpecificationForAllTilings(LunarLanderDomain.AGENTCLASS,
-                domain.getAttribute(LunarLanderDomain.AATTNAME),
-                angleWidth);
-        cmac.addSpecificationForAllTilings(LunarLanderDomain.AGENTCLASS,
-                domain.getAttribute(LunarLanderDomain.XATTNAME),
-                xWidth);
-        cmac.addSpecificationForAllTilings(LunarLanderDomain.AGENTCLASS,
-                domain.getAttribute(LunarLanderDomain.YATTNAME),
-                yWidth);
-        cmac.addSpecificationForAllTilings(LunarLanderDomain.AGENTCLASS,
-                domain.getAttribute(LunarLanderDomain.VXATTNAME),
-                velocityWidth);
-        cmac.addSpecificationForAllTilings(LunarLanderDomain.AGENTCLASS,
-                domain.getAttribute(LunarLanderDomain.VYATTNAME),
-                velocityWidth);
-
-
-        double defaultQ = 0.5;
-        ValueFunctionApproximation vfa = cmac.generateVFA(defaultQ/nTilings);
-
-        GradientDescentSarsaLam s = new GradientDescentSarsaLam(domain, .99, vfa, 0.02, 0.5);
 
         LearningAgentFactory transferLearningFactory = new LearningAgentFactory() {
             @Override
@@ -113,6 +80,43 @@ public class LLSarsa {
 
             @Override
             public LearningAgent generateAgent() {
+
+                Domain domain = env.getDomain();
+                LunarLanderDomain lld = new LunarLanderDomain();
+                //---------- Set up linear approximation method --------------
+                int nTilings = 5;
+                CMACFeatureDatabase cmac = new CMACFeatureDatabase(nTilings,
+                        CMACFeatureDatabase.TilingArrangement.RANDOMJITTER);
+                double resolution = 10.;
+
+                double angleWidth = 2 * lld.getAngmax() / resolution;
+                double xWidth = (lld.getXmax() - lld.getXmin()) / resolution;
+                double yWidth = (lld.getYmax() - lld.getYmin()) / resolution;
+                double velocityWidth = 2 * lld.getVmax() / resolution;
+
+                cmac.addSpecificationForAllTilings(LunarLanderDomain.AGENTCLASS,
+                        domain.getAttribute(LunarLanderDomain.AATTNAME),
+                        angleWidth);
+                cmac.addSpecificationForAllTilings(LunarLanderDomain.AGENTCLASS,
+                        domain.getAttribute(LunarLanderDomain.XATTNAME),
+                        xWidth);
+                cmac.addSpecificationForAllTilings(LunarLanderDomain.AGENTCLASS,
+                        domain.getAttribute(LunarLanderDomain.YATTNAME),
+                        yWidth);
+                cmac.addSpecificationForAllTilings(LunarLanderDomain.AGENTCLASS,
+                        domain.getAttribute(LunarLanderDomain.VXATTNAME),
+                        velocityWidth);
+                cmac.addSpecificationForAllTilings(LunarLanderDomain.AGENTCLASS,
+                        domain.getAttribute(LunarLanderDomain.VYATTNAME),
+                        velocityWidth);
+
+
+                double defaultQ = 0.5;
+                ValueFunctionApproximation vfa = cmac.generateVFA(defaultQ/nTilings);
+
+                GradientDescentSarsaLam s = new GradientDescentSarsaLam(domain, .99, vfa, 0.03, 0.5);
+
+
                 return s;
             }
         };
@@ -138,11 +142,8 @@ public class LLSarsa {
 
         LunarLanderDomain.setPad(s, pad.left(), pad.right(), pad.bottom(), pad.top());
 
-
         SimulatedEnvironment env = new SimulatedEnvironment(domain, rf, tf, s);
         return env;
-
-
     }
 
     public static RewardFunction transferRewardFunction(GradientDescentSarsaLam[] sarsas) {
@@ -150,15 +151,10 @@ public class LLSarsa {
         Domain domain = lld.generateDomain();
         RewardFunction rf = new LunarLanderRF(domain);
 
-        /*State s = LunarLanderDomain.getCleanState(domain, 1);
-        LunarLanderDomain.setAgent(s, 0., 5., 30.);
-        LunarLanderDomain.setObstacle(s, 0, 30., 50, 20, 40);
-        LunarLanderDomain.setPad(s, 75., 95., 0., 10.);*/
-
         ShapedRewardFunction shapedRF = new ShapedRewardFunction(rf) {
             @Override
             public double additiveReward(State s, GroundedAction a, State sprime) {
-                double potential = 0;
+                double potential = 0.;
                 for(int i = 0; i < sarsas.length; ++i) {
                     potential += .99*sarsas[i].value(sprime) - sarsas[i].value(s);
                 }
@@ -172,30 +168,26 @@ public class LLSarsa {
 
     public static void learnUsingShapedRF(RewardFunction rf) {
 
-        //LLRectangle[] obstacles = new LLRectangle[] {new LLRectangle(20.,40.,20.,200.), new LLRectangle(60., 80., 0., 30.)};
-
-        //SimulatedEnvironment target = getLanderEnvironment(obstacles, new LLRectangle(85.,100.,0.,10.), new double[]{5.,30.});
-
-
         LLRectangle[] obstacles = new LLRectangle[] {new LLRectangle(30.,50.,20.,40.)};
-        SimulatedEnvironment target = getLanderEnvironment(obstacles, new LLRectangle(85.,100.,0.,10.), new double[]{5.,30.});
+        SimulatedEnvironment target = getLanderEnvironment(obstacles, new LLRectangle(75.,95.,0.,10.), new double[]{5.,30.});
         target.setRf(rf);
         LearningAgentFactory agent = getAgentFactory("target task", target);
 
-        LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(target, 1, 10000, agent);
-        exp.setUpPlottingConfiguration(800, 800, 2, 1000, TrialMode.MOSTRECENTTTRIALONLY, PerformanceMetric.AVERAGEEPISODEREWARD);
+        LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(target, 10, 6000, agent);
+        exp.setUpPlottingConfiguration(800, 800, 2, 1000, TrialMode.MOSTRECENTANDAVERAGE, PerformanceMetric.STEPSPEREPISODE);
         exp.startExperiment();
+
         //exp.writeEpisodeDataToCSV("expDatTransfer");
 
-       /* List<EpisodeAnalysis> episodes = new ArrayList();
+        List<EpisodeAnalysis> episodes = new ArrayList();
         EpisodeAnalysis ea;
-        for(int i = 0; i < 800; i++){
+        for(int i = 0; i < 10000; i++){
             ea = agent.generateAgent().runLearningEpisode(target);
             episodes.add(ea);
             System.out.println(i + ": " + ea.maxTimeStep());
             target.resetEnvironment();
         }
-
+        /*
         Visualizer v = LLVisualizer.getVisualizer(new LunarLanderDomain().getPhysParams());
         new EpisodeSequenceVisualizer(v, target.getDomain(), episodes);*/
 
@@ -204,70 +196,55 @@ public class LLSarsa {
 
     public static void runLearning(LearningAgent agent, SimulatedEnvironment env, int numEpisodes) {
 
-
-        //s.
-
-        //env.
-
-        //Domain domain = env.getDomain();
         LunarLanderDomain lld = new LunarLanderDomain();
         List<EpisodeAnalysis> episodes = new ArrayList();
-        PerformancePlotter p = new PerformancePlotter("sarsa1", 1000, 1000, 2, 1500, TrialMode.MOSTRECENTTTRIALONLY, PerformanceMetric.CUMULTAIVEREWARDPEREPISODE);
-        EnvironmentServer s = new EnvironmentServer(env, p);
 
-        p.setRefreshDelay(1000);
-        p.startGUI();
-
-
-        p.startNewTrial();
 
         for(int i = 0; i < numEpisodes; i++){
 
-            EpisodeAnalysis ea = agent.runLearningEpisode(s);
-            p.endEpisode();
+            EpisodeAnalysis ea = agent.runLearningEpisode(env);
+
             episodes.add(ea);
-            s.resetEnvironment();
-            //p.observeEnvironmentActionInitiation();
+            env.resetEnvironment();
             System.out.println(i + ": " + ea.maxTimeStep());
 
-            //p.observeEnvironmentReset(env);
         }
-        p.endAllAgents();
 
 
 
         /*Visualizer v = LLVisualizer.getVisualizer(lld.getPhysParams());
-        new EpisodeSequenceVisualizer(v, domain, episodes);*/
+        new EpisodeSequenceVisualizer(v, env.getDomain(), episodes);*/
     }
 
 
 
 
     public static void main(String[] args) {
-        //LunarLanderDomain.setPad(s, 75., 95., 0., 10.);
-
-        //LearningAgentFactory one = getLanderAgentFactory("source1", null, new LLRectangle(75.,95.,0.,10.), new double[]{5., 30.});
-
 
 
         SimulatedEnvironment source1 = getLanderEnvironment(null, new LLRectangle(75.,95.,0.,10.), new double[]{5.,30.});
         LearningAgentFactory agent1 = getAgentFactory("sourcetask1", source1);
 
-        LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(source1, 1, 20000, agent1);
-        exp.setUpPlottingConfiguration(800, 800, 2, 1000, TrialMode.MOSTRECENTTTRIALONLY, PerformanceMetric.AVERAGEEPISODEREWARD);
+        LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(source1, 10, 6000, agent1);
+        exp.setUpPlottingConfiguration(800, 800, 2, 1000, TrialMode.MOSTRECENTANDAVERAGE, PerformanceMetric.AVERAGEEPISODEREWARD);
         exp.startExperiment();
-        //exp.
-       //exp.writeEpisodeDataToCSV("testout");
 
-
-        /*LLRectangle[] obstacles = new LLRectangle[] {new LLRectangle(30.,50.,20.,40.)};
+        LLRectangle[] obstacles = new LLRectangle[] {new LLRectangle(30.,50.,20.,40.)};
         SimulatedEnvironment source2 = getLanderEnvironment(obstacles, new LLRectangle(50.,100.,0.,1.), new double[]{5.,30.});
-        LearningAgentFactory agent2 = getAgentFactory("sourcetask2", source2);*/
+        LearningAgentFactory agent2 = getAgentFactory("sourcetask2", source2);
 
-        //runLearning(agent1.generateAgent(), source1, 1000);
+        //runLearning(agent1.generateAgent(), source1, 10000);
+        /*exp = new LearningAlgorithmExperimenter(source2, 10, 6000, agent2);
+        exp.setUpPlottingConfiguration(800, 800, 2, 1000, TrialMode.MOSTRECENTANDAVERAGE, PerformanceMetric.AVERAGEEPISODEREWARD);
+        exp.startExperiment();*/
 
+        LLRectangle[] obstacles2 = new LLRectangle[] {new LLRectangle(30.,50.,20.,40.)};
+        SimulatedEnvironment source3 = getLanderEnvironment(obstacles2, new LLRectangle(75.,95.,0.,10.), new double[]{5.,30.});
+        LearningAgentFactory agent3 = getAgentFactory("target no transfer", source3);
 
-
+        exp = new LearningAlgorithmExperimenter(source3, 10, 6000, agent3);
+        exp.setUpPlottingConfiguration(800, 800, 2, 1000, TrialMode.MOSTRECENTANDAVERAGE, PerformanceMetric.STEPSPEREPISODE);
+        exp.startExperiment();
 
 /*
         LLRectangle[] obstacles5 = new LLRectangle[] {new LLRectangle(20.,40.,20.,200.), new LLRectangle(60., 80., 0., 30.)};
@@ -286,40 +263,16 @@ public class LLSarsa {
         SimulatedEnvironment source2 = getLanderEnvironment(obstacles2, new LLRectangle(85.,100.,0.,10.), new double[]{5.,30.});
         LearningAgentFactory agent2 = getAgentFactory("sourcetask2", source2);
 */
-
-        //runLearning(agent1.generateAgent(), source1, 20000);
-        //runLearning(agent2.generateAgent(), source2, 20000);
-
-
-        /*LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(source1, 1, 20000, agent1);
-        exp.setUpPlottingConfiguration(800, 800, 2, 1000, TrialMode.MOSTRECENTANDAVERAGE, PerformanceMetric.AVERAGEEPISODEREWARD);
-        exp.startExperiment();
-        exp.writeEpisodeDataToCSV("testout");
-
-        exp = new LearningAlgorithmExperimenter(source2, 1, 20000, agent2);
-        exp.setUpPlottingConfiguration(800, 800, 2, 1000, TrialMode.TRIALAVERAGESONLY, PerformanceMetric.AVERAGEEPISODEREWARD);
-        exp.startExperiment();*/
-
-       /* exp = new LearningAlgorithmExperimenter(target, 1, 15000, agent);
-        exp.setUpPlottingConfiguration(800, 800, 2, 1000, TrialMode.MOSTRECENTTTRIALONLY, PerformanceMetric.STEPSPEREPISODE);
-        exp.startExperiment();*/
+        LearningAgent agent1_gen = agent1.generateAgent();
+        LearningAgent agent2_gen = agent2.generateAgent();
+        runLearning(agent1_gen, source1, 10000);
+        runLearning(agent2_gen, source2, 10000);
 
 
-        /*LLRectangle[] obstacles3 = new LLRectangle[] {new LLRectangle(20.,40.,20.,200.), new LLRectangle(60., 80., 0., 30.)};
-        SimulatedEnvironment source3 = getLanderEnvironment(obstacles3, new LLRectangle(85.,100.,0.,10.), new double[]{5.,30.});
-        LearningAgentFactory agent3 = getAgentFactory("target", source3);
-        runLearning(agent3.generateAgent(), source3, 1);*/
-
-
-        //GradientDescentSarsaLam[] sarsas = {(GradientDescentSarsaLam)agent1.generateAgent(), (GradientDescentSarsaLam)agent2.generateAgent()};
-        //RewardFunction transferedRF = transferRewardFunction(sarsas);
-        /*GradientDescentSarsaLam vfaOne = runExperimentAndGetVFA(1);
-        GradientDescentSarsaLam vfaTwo = runExperimentAndGetVFA(2);
-        GradientDescentSarsaLam[] sarsas = {vfaOne, vfaTwo};
+        GradientDescentSarsaLam[] sarsas = {(GradientDescentSarsaLam)agent1_gen, (GradientDescentSarsaLam)agent2_gen};
         RewardFunction transferedRF = transferRewardFunction(sarsas);
-        learnUsingShapedRF(transferedRF);*/
 
-       // learnUsingShapedRF(transferedRF);
+        learnUsingShapedRF(transferedRF);
 
     }
 
