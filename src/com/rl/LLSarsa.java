@@ -53,6 +53,8 @@ import java.util.List;
 
 public class LLSarsa {
 
+    static boolean graphs = false;
+
     public static GradientDescentSarsaLam runExperimentAndGetVFA(int taskID) {
         LunarLanderDomain lld = new LunarLanderDomain();
         Domain domain = lld.generateDomain();
@@ -104,34 +106,34 @@ public class LLSarsa {
 
         SimulatedEnvironment env = new SimulatedEnvironment(domain, rf, tf, s);
 
-        LearningAgentFactory transferLearningFactory = new LearningAgentFactory() {
-            @Override
-            public String getAgentName() {
-                return "SOURCE AGENT";
+        if (graphs) {
+            LearningAgentFactory transferLearningFactory = new LearningAgentFactory() {
+                @Override
+                public String getAgentName() {
+                    return "SOURCE AGENT";
+                }
+
+                @Override
+                public LearningAgent generateAgent() {
+                    return agent;
+                }
+            };
+            LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(env, 1, 20000, transferLearningFactory);
+            exp.setUpPlottingConfiguration(500, 500, 2, 1000, TrialMode.MOSTRECENTTTRIALONLY, PerformanceMetric.AVERAGEEPISODEREWARD);
+            exp.startExperiment();
+            exp.writeEpisodeDataToCSV("expDataSrc");
+        } else {
+            List<EpisodeAnalysis> episodes = new ArrayList();
+            for(int i = 0; i < 5000; i++){
+                EpisodeAnalysis ea = agent.runLearningEpisode(env);
+                episodes.add(ea);
+                System.out.println(i + ": " + ea.maxTimeStep());
+                env.resetEnvironment();
             }
 
-            @Override
-            public LearningAgent generateAgent() {
-                return agent;
-            }
-        };
-        LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(env, 1, 1000, transferLearningFactory);
-        exp.setUpPlottingConfiguration(500, 500, 2, 1000, TrialMode.MOSTRECENTTTRIALONLY, PerformanceMetric.STEPSPEREPISODE);
-        exp.startExperiment();
-        exp.writeEpisodeDataToCSV("expDataSrc");
-
-        /*
-        List<EpisodeAnalysis> episodes = new ArrayList();
-        for(int i = 0; i < 5000; i++){
-            EpisodeAnalysis ea = agent.runLearningEpisode(env);
-            episodes.add(ea);
-            System.out.println(i + ": " + ea.maxTimeStep());
-            env.resetEnvironment();
+            Visualizer v = LLVisualizer.getVisualizer(lld.getPhysParams());
+            new EpisodeSequenceVisualizer(v, domain, episodes);
         }
-
-        Visualizer v = LLVisualizer.getVisualizer(lld.getPhysParams());
-        new EpisodeSequenceVisualizer(v, domain, episodes);
-*/
         return agent;
     }
 
@@ -210,35 +212,36 @@ public class LLSarsa {
 
         SimulatedEnvironment env = new SimulatedEnvironment(domain, rf, tf, s);
 
-        /*
-        LearningAgentFactory transferLearningFactory = new LearningAgentFactory() {
-            @Override
-            public String getAgentName() {
-                return "TRANSFER AGENT";
+        if (graphs) {
+
+            LearningAgentFactory transferLearningFactory = new LearningAgentFactory() {
+                @Override
+                public String getAgentName() {
+                    return "TRANSFER AGENT";
+                }
+
+                @Override
+                public LearningAgent generateAgent() {
+                    return agent;
+                }
+            };
+            LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(env, 1, 20000, transferLearningFactory);
+            exp.setUpPlottingConfiguration(500, 500, 2, 1000, TrialMode.MOSTRECENTTTRIALONLY, PerformanceMetric.AVERAGEEPISODEREWARD);
+            exp.startExperiment();
+            exp.writeEpisodeDataToCSV("expDatTransfer");
+        } else {
+
+
+            List<EpisodeAnalysis> episodes = new ArrayList();
+            for (int i = 0; i < 1000; i++) {
+                EpisodeAnalysis ea = agent.runLearningEpisode(env);
+                episodes.add(ea);
+                System.out.println(i + ": " + ea.maxTimeStep());
+                env.resetEnvironment();
             }
-
-            @Override
-            public LearningAgent generateAgent() {
-                return agent;
-            }
-        };
-        LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(env, 1, 1000, transferLearningFactory);
-        exp.setUpPlottingConfiguration(500, 500, 2, 1000, TrialMode.MOSTRECENTTTRIALONLY, PerformanceMetric.STEPSPEREPISODE);
-        exp.startExperiment();
-        exp.writeEpisodeDataToCSV("expDatTransfer");
-        */
-
-
-        List<EpisodeAnalysis> episodes = new ArrayList();
-        for(int i = 0; i < 1000; i++){
-            EpisodeAnalysis ea = agent.runLearningEpisode(env);
-            episodes.add(ea);
-            System.out.println(i + ": " + ea.maxTimeStep());
-            env.resetEnvironment();
+            Visualizer v = LLVisualizer.getVisualizer(lld.getPhysParams());
+            new EpisodeSequenceVisualizer(v, domain, episodes);
         }
-        Visualizer v = LLVisualizer.getVisualizer(lld.getPhysParams());
-        new EpisodeSequenceVisualizer(v, domain, episodes);
-
     }
 
 
@@ -250,6 +253,13 @@ public class LLSarsa {
 
         RewardFunction transferedRF = transferRewardFunction("sum", vfaOne, vfaTwo);
         learnUsingShapedRF(transferedRF);
+
+
+        LunarLanderDomain lld = new LunarLanderDomain();
+        Domain domain = lld.generateDomain();
+        RewardFunction rf = new LunarLanderRF(domain);
+        learnUsingShapedRF(rf);
+
 
 
     }
