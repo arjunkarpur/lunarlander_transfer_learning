@@ -214,8 +214,8 @@ public class LLSarsa {
 
 
 
-        /*Visualizer v = LLVisualizer.getVisualizer(lld.getPhysParams());
-        new EpisodeSequenceVisualizer(v, env.getDomain(), episodes);*/
+        Visualizer v = LLVisualizer.getVisualizer(lld.getPhysParams());
+        new EpisodeSequenceVisualizer(v, env.getDomain(), episodes);
     }
 
 
@@ -223,13 +223,40 @@ public class LLSarsa {
 
     public static void main(String[] args) {
 
-        // Run simple learning test example
-        SimulatedEnvironment source1 = getLanderEnvironment(null, new LLRectangle(75.,95.,0.,10.), new double[]{5.,30.});
-        LearningAgentFactory agent1 = getAgentFactory("sourcetask1", source1);
 
+        int NUM_OF_TRIALS = 1000;
+
+        // Run simple learning test example
+        SimulatedEnvironment envOne = getLanderEnvironment(null, new LLRectangle(75.,95.,0.,10.), new double[]{60.,30.});
+        LearningAgentFactory agentOne = getAgentFactory("sourcetask1", envOne);
+        LearningAgent sourceAgentOne = agentOne.generateAgent();
+        runLearning(sourceAgentOne, envOne, NUM_OF_TRIALS);
+
+        // Transfer to a little bit further back
+        SimulatedEnvironment envTwo = getLanderEnvironment(null, new LLRectangle(75.,95.,0.,10.), new double[]{40.,30.});
+        LearningAgentFactory agentTwo = getAgentFactory("sourcetask2", envTwo);
+        GradientDescentSarsaLam sourceAgentTwo = (GradientDescentSarsaLam) agentTwo.generateAgent();
+        GradientDescentSarsaLam[] agents2 = {(GradientDescentSarsaLam) sourceAgentOne};
+        RewardFunction transferredTwo = transferRewardFunction(agents2);
+        envTwo.setRf(transferredTwo);
+        runLearning(sourceAgentTwo, envTwo, NUM_OF_TRIALS);
+
+        // Transfer to even further back
+        SimulatedEnvironment envThree = getLanderEnvironment(null, new LLRectangle(75.,95.,0.,10.), new double[]{20.,30.});
+        LearningAgentFactory agentThree = getAgentFactory("task3", envThree);
+        GradientDescentSarsaLam sourceAgentThree = (GradientDescentSarsaLam) agentThree.generateAgent();
+        GradientDescentSarsaLam[] agents3 = {(GradientDescentSarsaLam) sourceAgentOne};
+        RewardFunction transferredThree = transferRewardFunction(agents3);
+        envThree.setRf(transferredThree);
+        runLearning(sourceAgentThree, envThree, NUM_OF_TRIALS);
+
+
+
+        /*
         LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(source1, 10, 6000, agent1);
         exp.setUpPlottingConfiguration(800, 800, 2, 1000, TrialMode.MOSTRECENTANDAVERAGE, PerformanceMetric.AVERAGEEPISODEREWARD);
         exp.startExperiment();
+        */
 
     }
 
