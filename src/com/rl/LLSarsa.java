@@ -112,7 +112,7 @@ public class LLSarsa {
                 double defaultQ = 0.5;
                 ValueFunctionApproximation vfa = cmac.generateVFA(defaultQ/nTilings);
 
-                GradientDescentSarsaLam s = new GradientDescentSarsaLam(domain, .99, vfa, 0.02, 0.5);
+                GradientDescentSarsaLam s = new GradientDescentSarsaLam(domain, .90, vfa, 0.06, 0.3);
 
 
                 return s;
