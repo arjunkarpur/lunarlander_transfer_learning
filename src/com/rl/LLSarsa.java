@@ -1,55 +1,26 @@
 package com.rl;
 
-import burlap.behavior.policy.GreedyQPolicy;
-import burlap.behavior.policy.Policy;
 import burlap.behavior.singleagent.EpisodeAnalysis;
-import burlap.behavior.singleagent.auxiliary.EpisodeSequenceVisualizer;
-import burlap.behavior.singleagent.auxiliary.StateGridder;
 import burlap.behavior.singleagent.auxiliary.performance.LearningAlgorithmExperimenter;
 import burlap.behavior.singleagent.auxiliary.performance.PerformanceMetric;
-import burlap.behavior.singleagent.auxiliary.performance.PerformancePlotter;
 import burlap.behavior.singleagent.auxiliary.performance.TrialMode;
 import burlap.behavior.singleagent.learning.LearningAgent;
 import burlap.behavior.singleagent.learning.LearningAgentFactory;
-import burlap.behavior.singleagent.learning.lspi.LSPI;
-import burlap.behavior.singleagent.learning.lspi.SARSCollector;
-import burlap.behavior.singleagent.learning.lspi.SARSData;
 import burlap.behavior.singleagent.learning.tdmethods.vfa.GradientDescentSarsaLam;
-import burlap.behavior.singleagent.planning.stochastic.sparsesampling.SparseSampling;
 import burlap.behavior.singleagent.shaping.ShapedRewardFunction;
 import burlap.behavior.singleagent.vfa.ValueFunctionApproximation;
 import burlap.behavior.singleagent.vfa.cmac.CMACFeatureDatabase;
-import burlap.behavior.singleagent.vfa.common.ConcatenatedObjectFeatureVectorGenerator;
-import burlap.behavior.singleagent.vfa.fourier.FourierBasis;
-import burlap.behavior.singleagent.vfa.rbf.DistanceMetric;
-import burlap.behavior.singleagent.vfa.rbf.RBFFeatureDatabase;
-import burlap.behavior.singleagent.vfa.rbf.functions.GaussianRBF;
-import burlap.behavior.singleagent.vfa.rbf.metrics.EuclideanDistance;
-import burlap.domain.singleagent.cartpole.InvertedPendulum;
-import burlap.domain.singleagent.cartpole.InvertedPendulumVisualizer;
-import burlap.domain.singleagent.lunarlander.LLVisualizer;
 import burlap.domain.singleagent.lunarlander.LunarLanderDomain;
 import burlap.domain.singleagent.lunarlander.LunarLanderRF;
 import burlap.domain.singleagent.lunarlander.LunarLanderTF;
-import burlap.domain.singleagent.mountaincar.MCRandomStateGenerator;
-import burlap.domain.singleagent.mountaincar.MountainCar;
-import burlap.domain.singleagent.mountaincar.MountainCarVisualizer;
-import burlap.oomdp.auxiliary.StateGenerator;
 import burlap.oomdp.core.Domain;
 import burlap.oomdp.core.TerminalFunction;
 import burlap.oomdp.core.states.State;
 import burlap.oomdp.singleagent.GroundedAction;
 import burlap.oomdp.singleagent.RewardFunction;
-import burlap.oomdp.singleagent.common.GoalBasedRF;
-import burlap.oomdp.singleagent.common.VisualActionObserver;
-import burlap.oomdp.singleagent.environment.EnvironmentServer;
 import burlap.oomdp.singleagent.environment.SimulatedEnvironment;
-import burlap.oomdp.statehashing.SimpleHashableStateFactory;
-import burlap.oomdp.visualizer.Visualizer;
-import com.sun.prism.paint.Gradient;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 class LLRectangle {
@@ -164,19 +135,13 @@ public class LLSarsa {
     }
 
 
-    public static void learnUsingShapedRF(RewardFunction rf) {
-
-        LLRectangle[] obstacles = new LLRectangle[] {new LLRectangle(30.,50.,20.,40.)};
-        //SimulatedEnvironment target = getLanderEnvironment(obstacles, new LLRectangle(75.,95.,0.,10.), new double[]{5.,30.});
-
-        SimulatedEnvironment target = getLanderEnvironment(null, new LLRectangle(75.,95.,0.,10.), new double[]{5.,30.});
+    public static void learnUsingShapedRF(RewardFunction rf, SimulatedEnvironment target) {
 
         target.setRf(rf);
         LearningAgentFactory agent = getAgentFactory("target task", target);
 
         LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(target, 10, 6000, agent);
-        //exp.setUpPlottingConfiguration(800, 800, 2, 1000, TrialMode.MOSTRECENTANDAVERAGE, PerformanceMetric.AVERAGEEPISODEREWARD);
-        exp.setUpPlottingConfiguration(800, 800, 2, 1000, TrialMode.MOSTRECENTANDAVERAGE, PerformanceMetric.CUMULTAIVEREWARDPEREPISODE);
+        exp.setUpPlottingConfiguration(800, 800, 2, 1000, TrialMode.MOSTRECENTANDAVERAGE, PerformanceMetric.AVERAGEEPISODEREWARD);
         exp.startExperiment();
 
         //exp.writeEpisodeDataToCSV("expDatTransfer");
@@ -223,13 +188,35 @@ public class LLSarsa {
 
     public static void main(String[] args) {
 
-        // Run simple learning test example
-        SimulatedEnvironment source1 = getLanderEnvironment(null, new LLRectangle(75.,95.,0.,10.), new double[]{5.,30.});
-        LearningAgentFactory agent1 = getAgentFactory("sourcetask1", source1);
 
-        LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(source1, 10, 6000, agent1);
-        exp.setUpPlottingConfiguration(800, 800, 2, 1000, TrialMode.MOSTRECENTANDAVERAGE, PerformanceMetric.AVERAGEEPISODEREWARD);
-        exp.startExperiment();
+        // Set up environment with no obstacles
+        SimulatedEnvironment source0 = getLanderEnvironment(null, new LLRectangle(75.,95.,0.,10.), new double[]{5.,30.});
+        LearningAgentFactory agent0 = getAgentFactory("source_task_0", source0);
+
+        // Set up an environment with obstacles in the way
+        LLRectangle[] obstacles = new LLRectangle[] {new LLRectangle(30.,50.,20.,40.)};
+        SimulatedEnvironment source1 = getLanderEnvironment(obstacles, new LLRectangle(50.,100.,0.,1.), new double[]{5.,30.});
+        LearningAgentFactory agent1 = getAgentFactory("source_task_1", source1);
+
+        // Target task domain
+        SimulatedEnvironment targetDomain = getLanderEnvironment(obstacles, new LLRectangle(75.,95.,0.,10.), new double[]{5.,30.});
+
+        // Learn in source tasks
+        LearningAgent agent0_gen = agent0.generateAgent();
+        runLearning(agent0_gen, source0, 6000);
+        LearningAgent agent1_gen = agent1.generateAgent();
+        runLearning(agent1_gen, source1, 6000);
+
+        // Run learning without transfer
+        LunarLanderDomain lld = new LunarLanderDomain();
+        Domain domain = lld.generateDomain();
+        RewardFunction baseRF = new LunarLanderRF(domain);
+        learnUsingShapedRF(baseRF, targetDomain);
+
+        // Learn with transfer
+        GradientDescentSarsaLam[] sarsas = {(GradientDescentSarsaLam)agent0_gen, (GradientDescentSarsaLam) agent1_gen};
+        RewardFunction transferedRF = transferRewardFunction(sarsas);
+        learnUsingShapedRF(transferedRF, targetDomain);
 
     }
 
