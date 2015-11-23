@@ -164,23 +164,18 @@ public class LLSarsa {
     }
 
 
-    public static void learnUsingShapedRF(RewardFunction rf) {
+    public static void learnUsingShapedRF(RewardFunction rf, SimulatedEnvironment target) {
 
         LLRectangle[] obstacles = new LLRectangle[] {new LLRectangle(30.,50.,20.,40.)};
-        //SimulatedEnvironment target = getLanderEnvironment(obstacles, new LLRectangle(75.,95.,0.,10.), new double[]{5.,30.});
-
-        SimulatedEnvironment target = getLanderEnvironment(null, new LLRectangle(75.,95.,0.,10.), new double[]{5.,30.});
-
         target.setRf(rf);
         LearningAgentFactory agent = getAgentFactory("target task", target);
 
         LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(target, 10, 6000, agent);
-        //exp.setUpPlottingConfiguration(800, 800, 2, 1000, TrialMode.MOSTRECENTANDAVERAGE, PerformanceMetric.AVERAGEEPISODEREWARD);
-        exp.setUpPlottingConfiguration(800, 800, 2, 1000, TrialMode.MOSTRECENTANDAVERAGE, PerformanceMetric.CUMULTAIVEREWARDPEREPISODE);
+        exp.setUpPlottingConfiguration(800, 800, 2, 1000, TrialMode.MOSTRECENTANDAVERAGE, PerformanceMetric.AVERAGEEPISODEREWARD);
         exp.startExperiment();
 
-        //exp.writeEpisodeDataToCSV("expDatTransfer");
 
+        /*
         List<EpisodeAnalysis> episodes = new ArrayList();
         EpisodeAnalysis ea;
         for(int i = 0; i < 10000; i++){
@@ -189,7 +184,6 @@ public class LLSarsa {
             System.out.println(i + ": " + ea.maxTimeStep());
             target.resetEnvironment();
         }
-        /*
         Visualizer v = LLVisualizer.getVisualizer(new LunarLanderDomain().getPhysParams());
         new EpisodeSequenceVisualizer(v, target.getDomain(), episodes);*/
 
@@ -214,8 +208,8 @@ public class LLSarsa {
 
 
 
-        Visualizer v = LLVisualizer.getVisualizer(lld.getPhysParams());
-        new EpisodeSequenceVisualizer(v, env.getDomain(), episodes);
+        /*Visualizer v = LLVisualizer.getVisualizer(lld.getPhysParams());
+        new EpisodeSequenceVisualizer(v, env.getDomain(), episodes);*/
     }
 
 
@@ -241,22 +235,24 @@ public class LLSarsa {
         envTwo.setRf(transferredTwo);
         runLearning(sourceAgentTwo, envTwo, NUM_OF_TRIALS);
 
+
         // Transfer to even further back
         SimulatedEnvironment envThree = getLanderEnvironment(null, new LLRectangle(75.,95.,0.,10.), new double[]{20.,30.});
         LearningAgentFactory agentThree = getAgentFactory("task3", envThree);
         GradientDescentSarsaLam sourceAgentThree = (GradientDescentSarsaLam) agentThree.generateAgent();
-        GradientDescentSarsaLam[] agents3 = {(GradientDescentSarsaLam) sourceAgentOne};
+        GradientDescentSarsaLam[] agents3 = {(GradientDescentSarsaLam) sourceAgentTwo};
         RewardFunction transferredThree = transferRewardFunction(agents3);
-        envThree.setRf(transferredThree);
-        runLearning(sourceAgentThree, envThree, NUM_OF_TRIALS);
 
 
+        // Target task without any transferred learning done
+        LunarLanderDomain lld = new LunarLanderDomain();
+        Domain domain = lld.generateDomain();
+        RewardFunction baseRF = new LunarLanderRF(domain);
+        learnUsingShapedRF(baseRF,envThree);
 
-        /*
-        LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(source1, 10, 6000, agent1);
-        exp.setUpPlottingConfiguration(800, 800, 2, 1000, TrialMode.MOSTRECENTANDAVERAGE, PerformanceMetric.AVERAGEEPISODEREWARD);
-        exp.startExperiment();
-        */
+        // Learn using transferred knowledge
+        SimulatedEnvironment envThreeTrans = getLanderEnvironment(null, new LLRectangle(75.,95.,0.,10.), new double[]{20.,30.});
+        learnUsingShapedRF(transferredThree, envThreeTrans);
 
     }
 
