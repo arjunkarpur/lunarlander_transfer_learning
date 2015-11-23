@@ -171,7 +171,8 @@ public class LLSarsa {
         LearningAgentFactory agent = getAgentFactory("target task", target);
 
         LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(target, 10, 6000, agent);
-        exp.setUpPlottingConfiguration(800, 800, 2, 1000, TrialMode.MOSTRECENTANDAVERAGE, PerformanceMetric.AVERAGEEPISODEREWARD);
+        //exp.setUpPlottingConfiguration(800, 800, 2, 1000, TrialMode.MOSTRECENTANDAVERAGE, PerformanceMetric.AVERAGEEPISODEREWARD);
+        exp.setUpPlottingConfiguration(800, 800, 2, 1000, TrialMode.MOSTRECENTANDAVERAGE, PerformanceMetric.CUMULTAIVEREWARDPEREPISODE);
         exp.startExperiment();
 
 
