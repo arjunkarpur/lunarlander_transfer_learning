@@ -178,6 +178,7 @@ public class LLSarsa {
 
         //exp.writeEpisodeDataToCSV("expDatTransfer");
 
+        /*
         List<EpisodeAnalysis> episodes = new ArrayList();
         EpisodeAnalysis ea;
         for(int i = 0; i < 10000; i++){
@@ -186,7 +187,6 @@ public class LLSarsa {
             System.out.println(i + ": " + ea.maxTimeStep());
             target.resetEnvironment();
         }
-        /*
         Visualizer v = LLVisualizer.getVisualizer(new LunarLanderDomain().getPhysParams());
         new EpisodeSequenceVisualizer(v, target.getDomain(), episodes);*/
 
