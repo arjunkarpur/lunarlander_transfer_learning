@@ -164,12 +164,9 @@ public class LLSarsa {
     }
 
 
-    public static void learnUsingShapedRF(RewardFunction rf) {
+    public static void learnUsingShapedRF(RewardFunction rf, SimulatedEnvironment target) {
 
         LLRectangle[] obstacles = new LLRectangle[] {new LLRectangle(30.,50.,20.,40.)};
-        //SimulatedEnvironment target = getLanderEnvironment(obstacles, new LLRectangle(75.,95.,0.,10.), new double[]{5.,30.});
-
-        SimulatedEnvironment target = getLanderEnvironment(null, new LLRectangle(75.,95.,0.,10.), new double[]{5.,30.});
 
         target.setRf(rf);
         LearningAgentFactory agent = getAgentFactory("target task", target);
