@@ -5,12 +5,10 @@ import burlap.behavior.policy.Policy;
 import burlap.behavior.singleagent.EpisodeAnalysis;
 import burlap.behavior.singleagent.auxiliary.EpisodeSequenceVisualizer;
 import burlap.behavior.singleagent.auxiliary.StateGridder;
-import burlap.behavior.singleagent.auxiliary.performance.LearningAlgorithmExperimenter;
-import burlap.behavior.singleagent.auxiliary.performance.PerformanceMetric;
-import burlap.behavior.singleagent.auxiliary.performance.PerformancePlotter;
-import burlap.behavior.singleagent.auxiliary.performance.TrialMode;
+import burlap.behavior.singleagent.auxiliary.performance.*;
 import burlap.behavior.singleagent.learning.LearningAgent;
 import burlap.behavior.singleagent.learning.LearningAgentFactory;
+import burlap.oomdp.auxiliary.common.ConstantStateGenerator;
 import burlap.behavior.singleagent.learning.lspi.LSPI;
 import burlap.behavior.singleagent.learning.lspi.SARSCollector;
 import burlap.behavior.singleagent.learning.lspi.SARSData;
@@ -47,6 +45,7 @@ import burlap.oomdp.singleagent.environment.SimulatedEnvironment;
 import burlap.oomdp.statehashing.SimpleHashableStateFactory;
 import burlap.oomdp.visualizer.Visualizer;
 import com.sun.prism.paint.Gradient;
+import weka.experiment.Experiment;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,6 +65,63 @@ class LLRectangle {
     public double top() { return t; }
     public double bottom() { return b; }
 }
+
+
+class CustomEnvironment extends SimulatedEnvironment implements ExperimentalEnvironment{
+
+    ArrayList<RewardFunction> rfs;
+    int currentRF;
+
+
+    public CustomEnvironment(Domain domain, RewardFunction rf, TerminalFunction tf){
+        super(domain, rf, tf);
+        initRFs(rf);
+	}
+
+	public CustomEnvironment(Domain domain, RewardFunction rf, TerminalFunction tf, State initialState) {
+        super(domain, rf, tf, initialState);
+        initRFs(rf);
+	}
+
+	public CustomEnvironment(Domain domain, RewardFunction rf, TerminalFunction tf, StateGenerator stateGenerator) {
+        super(domain, rf, tf, stateGenerator);
+        initRFs(rf);
+
+	}
+
+    public void initRFs(RewardFunction initialRF) {
+        this.rfs = new ArrayList<RewardFunction>();
+        this.rfs.add(initialRF);
+        this.currentRF = 0;
+    }
+
+    public void addNewRewardFunction(RewardFunction newRF) {
+        rfs.add(newRF);
+    }
+
+    public void startNewExperiment() {
+        System.out.println("Starting new agent baby");
+
+        setRf(rfs.get(currentRF));
+        currentRF++;
+
+        return;
+    }
+
+}
+
+class TestingInfo {
+    String agentName;
+    RewardFunction rf;
+    SimulatedEnvironment env;
+
+    public TestingInfo(String agentName, RewardFunction rf, SimulatedEnvironment env) {
+        this.agentName = agentName;
+        this.rf = rf;
+        this.env = env;
+    }
+}
+
 public class LLSarsa {
 
     public static LearningAgentFactory getAgentFactory(String agentName, SimulatedEnvironment env) {
@@ -122,7 +178,7 @@ public class LLSarsa {
         return transferLearningFactory;
     }
 
-    public static SimulatedEnvironment getLanderEnvironment(LLRectangle[] obstacles,
+    public static CustomEnvironment getLanderEnvironment(LLRectangle[] obstacles,
                                                           LLRectangle pad, double[] lander) {
         LunarLanderDomain lld = new LunarLanderDomain();
         Domain domain = lld.generateDomain();
@@ -140,7 +196,7 @@ public class LLSarsa {
 
         LunarLanderDomain.setPad(s, pad.left(), pad.right(), pad.bottom(), pad.top());
 
-        SimulatedEnvironment env = new SimulatedEnvironment(domain, rf, tf, s);
+        CustomEnvironment env = new CustomEnvironment(domain, rf, tf, s);
         return env;
     }
 
@@ -164,13 +220,14 @@ public class LLSarsa {
     }
 
 
-    public static void learnUsingShapedRF(RewardFunction rf, SimulatedEnvironment target) {
+    public static void learnUsingShapedRF(CustomEnvironment ce, String[] names) {
 
-        LLRectangle[] obstacles = new LLRectangle[] {new LLRectangle(30.,50.,20.,40.)};
-        target.setRf(rf);
-        LearningAgentFactory agent = getAgentFactory("target task", target);
+        LearningAgentFactory agents[] = new LearningAgentFactory[names.length];
+        for (int i = 0; i < agents.length; i++) {
+            agents[i] = getAgentFactory(names[i], ce);
+        }
 
-        LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(target, 10, 6000, agent);
+        LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(ce, 1, 3000, agents);
         exp.setUpPlottingConfiguration(800, 800, 2, 1000, TrialMode.MOSTRECENTANDAVERAGE, PerformanceMetric.CUMULTAIVEREWARDPEREPISODE);
         exp.startExperiment();
 
@@ -243,16 +300,13 @@ public class LLSarsa {
         GradientDescentSarsaLam[] agents3 = {(GradientDescentSarsaLam) sourceAgentTwo};
         RewardFunction transferredThree = transferRewardFunction(agents3);
 
-
-        // Target task without any transferred learning done
-        LunarLanderDomain lld = new LunarLanderDomain();
-        Domain domain = lld.generateDomain();
-        RewardFunction baseRF = new LunarLanderRF(domain);
-        learnUsingShapedRF(baseRF,envThree);
-
-        // Learn using transferred knowledge
-        SimulatedEnvironment envThreeTrans = getLanderEnvironment(null, new LLRectangle(75.,95.,0.,10.), new double[]{20.,30.});
-        learnUsingShapedRF(transferredThree, envThreeTrans);
+        // Create environment, add reward functions and names, and run
+        CustomEnvironment endTargetEnv = getLanderEnvironment(null, new LLRectangle(75.,95.,0.,10.), new double[]{20.,30.});
+        endTargetEnv.addNewRewardFunction(transferredThree);
+        String[] names = new String[2];
+        names[0] = "Non-transfer Agent";
+        names[1] = "Multi-Step Transfer Agent";
+        learnUsingShapedRF(endTargetEnv, names);
 
     }
 
