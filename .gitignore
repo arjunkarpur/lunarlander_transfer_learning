@@ -1,0 +1,6 @@
+.idea/
+*.class
+output/
+*.csv
+*.log
+*.iml
