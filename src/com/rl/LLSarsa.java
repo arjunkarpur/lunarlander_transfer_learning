@@ -227,9 +227,10 @@ public class LLSarsa {
             agents[i] = getAgentFactory(names[i], ce);
         }
 
-        LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(ce, 100, 2000, agents);
+        LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(ce, 1, 2000, agents);
         exp.setUpPlottingConfiguration(800, 800, 2, 1000, TrialMode.MOSTRECENTANDAVERAGE, PerformanceMetric.CUMULTAIVEREWARDPEREPISODE);
         exp.startExperiment();
+        exp.writeEpisodeDataToCSV("test_csv");
 
 
         /*
