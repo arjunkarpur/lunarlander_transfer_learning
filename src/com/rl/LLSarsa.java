@@ -45,7 +45,7 @@ import burlap.oomdp.singleagent.environment.SimulatedEnvironment;
 import burlap.oomdp.statehashing.SimpleHashableStateFactory;
 import burlap.oomdp.visualizer.Visualizer;
 import com.sun.prism.paint.Gradient;
-import weka.experiment.Experiment;
+//import weka.experiment.Experiment;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -233,17 +233,7 @@ public class LLSarsa {
         exp.writeEpisodeDataToCSV("test_csv");
 
 
-        /*
-        List<EpisodeAnalysis> episodes = new ArrayList();
-        EpisodeAnalysis ea;
-        for(int i = 0; i < 10000; i++){
-            ea = agent.generateAgent().runLearningEpisode(target);
-            episodes.add(ea);
-            System.out.println(i + ": " + ea.maxTimeStep());
-            target.resetEnvironment();
-        }
-        Visualizer v = LLVisualizer.getVisualizer(new LunarLanderDomain().getPhysParams());
-        new EpisodeSequenceVisualizer(v, target.getDomain(), episodes);*/
+
 
 
     }
@@ -271,6 +261,14 @@ public class LLSarsa {
     }
 
 
+    public static void getSourceTaskData(LearningAgentFactory agent, SimulatedEnvironment env, int numTrials, int numEpisodes, String filePath) {
+        LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(env, numTrials, numEpisodes, agent);
+        exp.setUpPlottingConfiguration(800, 800, 2, 1000, TrialMode.MOSTRECENTANDAVERAGE, PerformanceMetric.CUMULTAIVEREWARDPEREPISODE);
+        exp.startExperiment();
+        exp.writeEpisodeDataToCSV(filePath);
+    }
+
+
 
 
     public static void main(String[] args) {
@@ -281,8 +279,12 @@ public class LLSarsa {
         // Run simple learning test example
         SimulatedEnvironment envOne = getLanderEnvironment(null, new LLRectangle(75.,95.,0.,10.), new double[]{60.,30.});
         LearningAgentFactory agentOne = getAgentFactory("sourcetask1", envOne);
+
+        getSourceTaskData(agentOne, envOne, 200, 2000, "agentOneSource");
         LearningAgent sourceAgentOne = agentOne.generateAgent();
         runLearning(sourceAgentOne, envOne, NUM_OF_TRIALS);
+
+
 
         // Transfer to a little bit further back
         SimulatedEnvironment envTwo = getLanderEnvironment(null, new LLRectangle(75.,95.,0.,10.), new double[]{40.,30.});
@@ -291,6 +293,7 @@ public class LLSarsa {
         GradientDescentSarsaLam[] agents2 = {(GradientDescentSarsaLam) sourceAgentOne};
         RewardFunction transferredTwo = transferRewardFunction(agents2);
         envTwo.setRf(transferredTwo);
+        getSourceTaskData(agentTwo, envTwo, 200, 2000, "agentTwoSource");
         runLearning(sourceAgentTwo, envTwo, NUM_OF_TRIALS);
 
 
